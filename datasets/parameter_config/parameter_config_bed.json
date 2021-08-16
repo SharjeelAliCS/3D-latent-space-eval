@@ -1,0 +1,71 @@
+{
+    "Bed": {
+        "config": [
+            {
+                "data": [
+                    30,
+                    50
+                ],
+                "name": "width",
+                "step": 6,
+                "type": "scalar"
+            },
+            {
+                "data": [
+                    20,
+                    50
+                ],
+                "name": "height",
+                "step": 5,
+                "type": "scalar"
+            },
+            {
+                "data": [
+                    0.2,
+                    0.4
+                ],
+                "name": "mattress_height_percent",
+                "step": 3,
+                "type": "scalar"
+            },
+            {
+                "data": [
+                    0,
+                    0.6
+                ],
+                "name": "headboard_curve",
+                "step": 3,
+                "type": "scalar"
+            },
+            {
+                "data": [
+                    0,
+                    0.6
+                ],
+                "name": "frontboard_curve",
+                "step": 3,
+                "type": "scalar"
+            },
+            {
+                "data": [
+                    "legs_basic",
+                    "lege_two",
+                    "legs_one"
+                ],
+                "name": "legType",
+                "step": 3,
+                "type": "type"
+            }
+        ],
+        "vector": [
+            "width",
+            "height",
+            "mattress_height_percent",
+            "headboard_curve",
+            "frontboard_curve",
+            "legs_basic",
+            "lege_two",
+            "legs_one"
+        ]
+    }
+}

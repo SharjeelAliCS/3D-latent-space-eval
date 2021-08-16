@@ -1,0 +1,85 @@
+{
+    "Shelf": {
+        "config": [
+            {
+                "data": [
+                    50,
+                    100
+                ],
+                "name": "width",
+                "step": 3,
+                "type": "scalar"
+            },
+            {
+                "data": [
+                    50,
+                    100
+                ],
+                "name": "height",
+                "step": 3,
+                "type": "scalar"
+            },
+            {
+                "data": [
+                    0.2,
+                    0.6
+                ],
+                "name": "legHeightPercent",
+                "step": 3,
+                "type": "scalar"
+            },
+            {
+                "data": [
+                    3,
+                    5
+                ],
+                "name": "rows",
+                "step": 3,
+                "type": "scalar"
+            },
+            {
+                "data": [
+                    1,
+                    3
+                ],
+                "name": "columns",
+                "step": 3,
+                "type": "scalar"
+            },
+            {
+                "data": 0,
+                "name": "fill_back",
+                "step": 3,
+                "type": "binary"
+            },
+            {
+                "data": 0,
+                "name": "fill_columns",
+                "step": 3,
+                "type": "binary"
+            },
+            {
+                "data": [
+                    "legs_basic",
+                    "lege_two",
+                    "legs_one"
+                ],
+                "name": "legType",
+                "step": 3,
+                "type": "type"
+            }
+        ],
+        "vector": [
+            "width",
+            "height",
+            "legHeightPercent",
+            "rows",
+            "columns",
+            "fill_back",
+            "fill_columns",
+            "legs_basic",
+            "lege_two",
+            "legs_one"
+        ]
+    }
+}

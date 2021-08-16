@@ -1,0 +1,74 @@
+{
+    "Table": {
+        "config": [
+            {
+                "data": [
+                    10,
+                    50
+                ],
+                "name": "width",
+                "step": 5,
+                "type": "scalar"
+            },
+            {
+                "data": [
+                    10,
+                    50
+                ],
+                "name": "height",
+                "step": 4,
+                "type": "scalar"
+            },
+            {
+                "data": [
+                    0.15,
+                    0.4
+                ],
+                "name": "legWidthPercent",
+                "step": 4,
+                "type": "scalar"
+            },
+            {
+                "data": [
+                    0,
+                    15
+                ],
+                "name": "leg_angles",
+                "step": 4,
+                "type": "scalar"
+            },
+            {
+                "data": [
+                    "legs_round",
+                    "legs_split",
+                    "legs_basic",
+                    "legs_support"
+                ],
+                "name": "legType",
+                "step": 3,
+                "type": "type"
+            },
+            {
+                "data": [
+                    "top_round",
+                    "top_basic"
+                ],
+                "name": "topType",
+                "step": 3,
+                "type": "type"
+            }
+        ],
+        "vector": [
+            "width",
+            "height",
+            "legWidthPercent",
+            "leg_angles",
+            "legs_round",
+            "legs_split",
+            "legs_basic",
+            "legs_support",
+            "top_round",
+            "top_basic"
+        ]
+    }
+}
