@@ -9,12 +9,26 @@ import json
 import time
 import matplotlib.pyplot as plt
 
-from utils import paths
 from scipy.spatial import distance_matrix
 
-SHAPE_TYPE = paths.SHAPE_TYPE
+# ---------- INPUT FILES ----------
+
+# The z vector file is the latent space generated from the training model:
+SHAPE_TYPE = 'Chair'
+z_vectors = 'z_vectors.csv'
+parameter_vectors = '../datasets/parameter_vectors/parameter_vectors_' + SHAPE_TYPE.lower() + '.h5'
+parameter_config = '../datasets/parameter_config/parameter_config_' + SHAPE_TYPE.lower() + '.json'
+
+# ---------- OUTPUT FILES ----------
+OUTPUT_FILE_DIR = 'distances/'
+# These output the euclidean distance matricies for the following datasets:
+z_distances_file = OUTPUT_FILE_DIR+'z_distances.npy'
+param_distances_file = OUTPUT_FILE_DIR+'param_distances.npy'
+
+# This output an h5 file containing all the datasets.
+correlation_file = OUTPUT_FILE_DIR+'correlations.npy'
+
 def output_data(filename, data):
-    print("Outputted ", filename)
     np.save(filename, data)
 
 def read_h5(filename):
@@ -70,7 +84,7 @@ def calculate_smallest_change(param_sums):
     min_indices = []
     for i in range(param_sums.shape[0]):
         min_val = np.where(param_sums[i] == np.amin(param_sums[i]))
-        #print(min_val[0][0])
+
         min_values.append(param_sums[i][min_val[0][0]])
         min_indices.append(min_val[0][0])
     return np.array(min_indices), np.array(min_values)
@@ -78,26 +92,12 @@ def calculate_smallest_change(param_sums):
 def within_range(val, ranges):
     return val > ranges[0] and val < ranges[1]
 
-def calculate_changes_less_than(param_sums, threshold):
-    values = []
-    indices = []
-    for i in range(param_sums.shape[0]):
-        mean = np.mean(param_sums[i])
-        mean = mean * 0.75
-        val = np.where(param_sums[i] < mean)[0]
-
-
-        indices.append(val)
-        values.append(param_sums[i][val])
-    return np.array(indices), np.array(values)
-
 def calculate_change_less_than_iqr(param_sums):
     values = []
     indices = []
     for i in range(param_sums.shape[0]):
-        #q75, q25 = np.percentile(param_sums[i], [75 ,25])
+
         q25, q75 = outlier_treatment(param_sums[i])
-        print("Min: {}. q1: {}. mean: {}. q3: {}. Max: {}.".format(np.amin(param_sums[i]), q25, np.mean(param_sums[i]), q75, np.amax(param_sums[i])))
 
         val_less = np.where(param_sums[i] < q25)[0]
         val_greater = np.where(param_sums[i] > q75)[0]
@@ -111,7 +111,7 @@ def calculate_change_less_than_iqr(param_sums):
     return np.array(indices, dtype=object), np.array(values,dtype=object)
 
 def outlier_treatment(x):
-    print(x)
+
     x = np.sort(x)
     q1,q3 = np.percentile(x , [25,75])
     iq = q3 - q1
@@ -152,7 +152,7 @@ def convert_param_to_binary(param_vectors, param_config):
         for j in range(param_vectors.shape[1]):
             param_type = param_config['vector'][j]
             param_arr = param_onezeros(param_config['config'],param_type, param_vectors[i][j])
-            #print(param_arr)
+
             v += param_arr
         v = np.array(v)
         binary_arr.append(v)
@@ -164,7 +164,7 @@ def param_step_mean(config,param_type, val):
         if(param_type == param['name'] and param['type'] == 'scalar'):
             param_arr = param['data']
             steps = param['step']
-            print("{} steps for {} with val {}".format(steps, param['name'], val))
+
             return float(val) / float(steps)
     return float(val) / float(2.0)
 
@@ -190,58 +190,32 @@ def main(param_vectors, z_vectors):
         param_vec_list = []
         for j in range(sorted_indices.shape[1]):
             param_vec = param_vectors[sorted_indices[i][j]]
-            #print("i: {}- {}".format(i, param_vec))
             param_vec_list.append(param_vec)
 
         sorted_param.append(param_vec_list)
 
     sorted_param = np.array(sorted_param)
-    #print("sorted_param: {}".format(sorted_param.shape))
-
     pairwise_list = calculate_pairwise(sorted_param)
-    #print("pairwise_list: {}".format(pairwise_list.shape))
-
     param_sums = calculate_sums(pairwise_list)
-    #print("param_sums: {}".format(param_sums.shape))
-
     min_indices, min_values = calculate_smallest_change(param_sums)
-    #print("min_values: {}".format(min_values.shape))
-
     min_values_avg = np.mean(min_values)
-    #print("min_values_avg: {}".format(min_values_avg))
 
     mean = np.mean(param_sums)
-    #print("The mean is: {}".format(np.mean(param_sums)))
 
-    less_than_indices, less_than_values = calculate_changes_less_than(param_sums, mean)
-    param_sums = param_dis(param_sums, read_json(paths.PARAMETER_CONFIG_PATH)[paths.SHAPE_TYPE])
+    param_sums = param_dis(param_sums, read_json(parameter_config)[SHAPE_TYPE])
     less_than_iqr_indices, less_than_iqr_values = calculate_change_less_than_iqr(param_sums)
-    #print("less_than_avg_values: {}, less_than_values: {}".format(less_than_indices.shape, less_than_values.shape))
 
-    num_changes = 0
     num_changes_iqr = 0
-    for i in range(less_than_values.shape[0]):
-        if(len(less_than_values[i]) > 0):
-            num_changes +=1
+    for i in range(less_than_iqr_indices.shape[0]):
         if(len(less_than_iqr_indices[i]) > 0):
             num_changes_iqr +=1
-
-    #print("------------------")
-    #print("The mean is ", mean)
-    #print("The min value avg is ", min_values_avg)
-    #print("The num < 0.75 mean is ", num_changes)
-    print("The num < IQR is ", num_changes_iqr)
-    #print("------------------")
+    print('Number of interquartle dimension changes are: ', num_changes_iqr)
 
 if __name__ == '__main__':
     start_time = time.time()
-    z_vectors = np.genfromtxt(paths.Z_FILE_PATH, delimiter=',')
-    param_vectors = read_h5(paths.PARAMETER_PATH)
+    z_vectors = np.genfromtxt(z_vectors, delimiter=',')
+    param_vectors = read_h5(parameter_vectors)
 
-    print("file: ", paths.ENCODER_SHAPE_PATH)
-    print("Vectors: Z - {}. Parameters - {}".format(z_vectors.shape, param_vectors.shape))
-
-    print("normal:")
     main(param_vectors, z_vectors)
     end_time = time.time()
     print("Took {} seconds to complete.".format(end_time - start_time))

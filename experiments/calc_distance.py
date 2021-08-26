@@ -6,21 +6,29 @@ import numpy as np
 import h5py
 import numpy as np
 
-from utils import paths, hdf5
 from scipy.spatial import distance_matrix
 import matplotlib.pyplot as plt
 
-SHAPE_TYPE = paths.SHAPE_TYPE
+# One of 'Chair', 'Bed', 'Table', 'Shelf'
+SHAPE_TYPE = 'Chair'
 OVERWRITE_FILE = True
 FILTER = True
 FILTER_NUM = 100
-z_distances_file = paths.DISTANCES_PATH+'z_distances.npy'
-param_distances_file = paths.DISTANCES_PATH+'param_distances.npy'
 
-z_means_file = paths.DISTANCES_PATH+'z_means.npy'
-param_means_file = paths.DISTANCES_PATH+'param_means.npy'
+# ---------- INPUT FILES ----------
 
-h5_file = paths.DISTANCES_PATH+'results_distances.h5'
+# The z vector file is the latent space generated from the training model:
+z_vectors = 'z_vectors.csv'
+parameter_vectors = '../datasets/parameter_vectors/parameter_vectors_' + SHAPE_TYPE.lower() + '.h5'
+
+# ---------- OUTPUT FILES ----------
+OUTPUT_FILE_DIR = 'distances/'
+# These output the euclidean distance matricies for the following datasets:
+z_distances_file = OUTPUT_FILE_DIR+'z_distances.npy'
+param_distances_file = OUTPUT_FILE_DIR+'param_distances.npy'
+
+# This output an h5 file containing all the datasets.
+correlation_file = OUTPUT_FILE_DIR+'correlations.npy'
 
 def output_data(filename, data):
     print("Outputted ", filename)
@@ -46,16 +54,11 @@ def calculate_smallest_pairs(x, n):
 
     dis_arr = np.array(dis_arr)
     dis_arr = dis_arr[dis_arr[:, 2].argsort()]
-    print("dis_arr before: ", dis_arr.shape)
     dis_arr = dis_arr[:n]
-    print("dis_arr after: ", dis_arr.shape)
     if(FILTER):
         temp_matrix = np.zeros(x.shape)
         j = dis_arr[:,0].astype(int)
         k = dis_arr[:,1].astype(int)
-
-        #ix = np.ix_(j, k)
-        #print("ix shape: ", ix.shape)
         temp_matrix[j, k] = 1
 
         return temp_matrix
@@ -112,15 +115,10 @@ def calculate_covariance(x, y, x_means, y_means, pair_indices):
     products = np.array(products)
     sums = np.sum(products)
 
-    #products = x*y
-    #sums = np.sum(products)
     n2 = np.count_nonzero(pair_indices)
     average = sums / n2
     return np.sqrt(average)
 
-#pae: 0.7305051493893919 - 0.96489
-#pae: 0.723496 - 0.96326859
-#pae: 0.710016 -
 def calculate_correlation(covariance, x, y, x_means, y_means, pair_indices):
     std_x = calculate_covariance(x,x, x_means, x_means, pair_indices)
     std_y = calculate_covariance(y,y, y_means, y_means, pair_indices)
@@ -129,23 +127,17 @@ def calculate_correlation(covariance, x, y, x_means, y_means, pair_indices):
 
 def calculate_all_means(x, pair_indices):
     means = {}
-    #means['total'] = calculate_mean(x, -1, pair_indices)#np.mean(x)
     means['total'] = np.mean(x)
-    #means['col'] = calculate_mean(x, 0, pair_indices)
     means['col'] = np.mean(x, axis=1)
-    #means['row'] = calculate_mean(x, 1, pair_indices)
     means['row'] =np.mean(x, axis=0)
     return means
 
 if __name__ == '__main__':
-    if not os.path.exists(paths.DISTANCES_PATH):
-        os.makedirs(paths.DISTANCES_PATH)
+    if not os.path.exists(OUTPUT_FILE_DIR):
+        os.makedirs(OUTPUT_FILE_DIR)
 
-    z_vectors = np.genfromtxt(paths.Z_FILE_PATH, delimiter=',')
-    param_vectors = read_h5(paths.PARAMETER_PATH)
-
-    #z_vectors = np.array([[1,2,3],[4,5,6],[7,8,9],[10,11,12]])
-    #param_vectors = np.array([[1,2],[4,5],[7,8],[10,11]])
+    z_vectors = np.genfromtxt(z_vectors, delimiter=',')
+    param_vectors = read_h5(parameter_vectors)
 
     print("Vectors: Z - {}. Parameters - {}".format(z_vectors.shape, param_vectors.shape))
 
@@ -167,12 +159,19 @@ if __name__ == '__main__':
     print("Distances: Z - {}. Parameters - {}".format(z_distances.shape, param_distances.shape))
 
     filters = [100000, 200000, 300000, 400000, 500000, 600000, 700000, 800000, 900000, 1000000]
-    filter_n = FILTER_NUM
+
+    filter_n = 1
+
+    if (FILTER):
+        filter_n = FILTER_NUM
+
     corel = []
+
     for i in filters:
         filter_n = i
         print("filter size: ", filter_n)
         pair_indices = calculate_smallest_pairs(param_distances, filter_n)
+
         print("pair_indices is {}".format(pair_indices.shape))
 
         param_means = calculate_all_means(param_distances, pair_indices)
@@ -187,26 +186,5 @@ if __name__ == '__main__':
 
         corel.append(correlation)
 
-    print(filters, corel)
-
-    '''
     # Output the data into an h5 file:
-    out_data = {
-        'vectors': {
-            'latent_space': z_vectors,
-            'input_parameters': param_vectors
-        },
-        'distances': {
-            'latent_space': z_distances,
-            'input_parameters': param_distances
-        },
-        'means': {
-            'latent_space': z_means,
-            'input_parameters': param_means
-        },
-        'covariance': np.array([covariance]),
-        'correlation': np.array([correlation])
-    }
-
-    hdf5.save_dict_to_hdf5(out_data, h5_file)
-    '''
+    output_data(correlation_file, np.array(corel))

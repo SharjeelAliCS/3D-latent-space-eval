@@ -1,3 +1,10 @@
+'''
+THIS FILE SHOULD BE RUN WITH WHATEVER TESTING MODEL IS BEING USED
+AS IT USES THE MODEL'S DECODER TO CONVERT A LATENT SPACE VECTOR
+INTO ITS RECONSTRUCTED SHAPE.
+
+THE CODE THAT IS SHOWN IS TAKEN FROM THE 3D-GAE LINKED IN THE README
+'''
 import re
 import os
 import sys
@@ -16,13 +23,32 @@ import tensorflow as tf
 import tensorflow.keras as keras
 
 from GAE import *
-from utils import npytar, save_volume, paths, encoder_predict
+from utils import npytar, encoder_predict
 
 from scipy.spatial import distance_matrix
 
-param_indices_file = paths.INTERPOLATION_PATH+'param_indices.npy'
+
+# ---------- INPUT FILES ----------
+
+# The z vector file is the latent space generated from the training model:
+SHAPE_TYPE = 'Chair'
+z_vectors = 'z_vectors.csv'
+parameter_vectors = '../datasets/parameter_vectors/parameter_vectors_' + SHAPE_TYPE.lower() + '.h5'
+parameter_config = '../datasets/parameter_config/parameter_config_' + SHAPE_TYPE.lower() + '.json'
+
+# ---------- OUTPUT FILES ----------
+OUTPUT_FILE_DIR = 'interpolations/'
+
+param_indices_file = OUTPUT_FILE_DIR+'param_indices.npy'
+# These output the euclidean distance matricies for the following datasets:
+z_distances_file = OUTPUT_FILE_DIR+'z_distances.npy'
+param_distances_file = OUTPUT_FILE_DIR+'param_distances.npy'
 
 OVERWRITE_FILE = False
+
+# This outputs the specific set of interpolations at index:
+OUTPUT_INTERPOLATION_INDEX = 0
+
 def output_data(filename, data):
     print("Outputted ", filename)
     np.save(filename, data)
@@ -30,7 +56,7 @@ def output_data(filename, data):
 def read_h5(filename):
     with h5py.File(filename, "r") as f:
         # Get the data
-        np_arr = np.array(f[paths.SHAPE_TYPE])
+        np_arr = np.array(f[SHAPE_TYPE])
         np_arr = np_arr[0, :, :]
         np_arr = np.swapaxes(np_arr,0,1)
         return np_arr
@@ -39,13 +65,13 @@ def read_json(filename):
     f = open(filename,)
     data = json.load(f)
     return data
+
 def calculate_distances(x, y):
     distances = x - y
     distances = np.square(distances)
     sum_distances = np.sum(distances)
     euclidean = np.sqrt(sum_distances)
 
-    #euclidean = distance_matrix(x,y)
     return euclidean
 
 def calculate_step(min_val, max_val, step):
@@ -56,19 +82,16 @@ def get_same_indices(arr, in_vectors, index, step_val):
     vectors = np.delete(in_vectors, index, axis=1)
     indices = np.array(range(vectors.shape[0]))
 
-
     vectors_unique = np.unique(vectors, axis=0)
-
 
     for i in range(vectors_unique.shape[0]):
         unique_row = vectors_unique[i]
         same_arr = []
         for j in range(vectors.shape[0]):
             vector = vectors[j]
-            #print("{}-{}={}".format(unique_row, vector[1:], np.array_equal(unique_row,vector[1:])))
             if(np.array_equal(unique_row,vector)):
-
                 same_arr.append(j)
+
         if(len(same_arr) > 2):
             same_arr = np.array(same_arr)
             vectors_found = in_vectors[same_arr]
@@ -76,7 +99,7 @@ def get_same_indices(arr, in_vectors, index, step_val):
             vectors_found = np.append(arr = vectors_found, values = reshaped_indices, axis= 1)
 
             vectors_sorted = vectors_found[vectors_found[:, index].argsort()]
-            #print(vectors_sorted)
+
             for j in range(vectors_sorted.shape[0]-2):
                 start = vectors_sorted[j][index]
                 end = vectors_sorted[j+2][index]
@@ -85,25 +108,21 @@ def get_same_indices(arr, in_vectors, index, step_val):
                 diff_1 = round(end - avg, 2)
                 diff_2 = round(avg - start, 2)
                 step_val_rounded = round(step_val, 2)
-                #print("{}-{}-{} | {}".format(start, avg, end, step_val))
+
                 shape_indices = []
                 if(diff_1 == step_val_rounded and diff_2 == step_val_rounded):
-                    #print("good")
+
                     shape_indices.append(vectors_sorted[j][-1])
                     shape_indices.append(vectors_sorted[j+1][-1])
                     shape_indices.append(vectors_sorted[j+2][-1])
 
                 if(len(shape_indices) > 2):
                     arr.append(shape_indices)
-            #print(vectors_sorted)
-            # arr.append(same_arr)
 
-    #arr = np.split(arr[:,1], np.unique(arr[:, 0], return_index=True)[1][1:])
-    #return arr
     return arr
 
 def calculate_param_indices(param_vectors):
-    parameter_data = read_json(paths.PARAMETER_CONFIG_PATH)[paths.SHAPE_TYPE]['config']
+    parameter_data = read_json(parameter_config)[SHAPE_TYPE]['config']
 
     indices = []
     i = 0
@@ -115,8 +134,9 @@ def calculate_param_indices(param_vectors):
     indices = np.array(indices).astype(int)
     return indices
 
+#The decoder is your network model's decoder:
 def interpolate(decoder, input_z_vectors, i, j):
-    #print("i: {}, j: {}, shape: {}".format(i, j,z_vectors.shape))
+
     step = 0.5
     z_vectors = []
     z_vector_i = np.array([input_z_vectors[i]])
@@ -127,29 +147,28 @@ def interpolate(decoder, input_z_vectors, i, j):
     generation[generation >= 0.5] = 1
     generation[generation < 0.5] = 0
 
-    #save_volume.save_output(generation[0, 0, :], 32, paths.GENERATE_PATH, i)
     return generation[0, 0, :]
 
 if __name__ == '__main__':
 
-    if not os.path.exists(paths.INTERPOLATION_PATH):
-        os.makedirs(paths.INTERPOLATION_PATH)
+    if not os.path.exists(OUTPUT_FILE_DIR):
+        os.makedirs(OUTPUT_FILE_DIR)
 
-    if not os.path.exists(paths.INTERPOLATION_PATH+'real/'):
-        os.makedirs(paths.INTERPOLATION_PATH+'real/')
+    if not os.path.exists(OUTPUT_FILE_DIR+'real/'):
+        os.makedirs(OUTPUT_FILE_DIR+'real/')
 
-    if not os.path.exists(paths.INTERPOLATION_PATH+'interp/'):
-        os.makedirs(paths.INTERPOLATION_PATH+'interp/')
+    if not os.path.exists(OUTPUT_FILE_DIR+'interp/'):
+        os.makedirs(OUTPUT_FILE_DIR+'interp/')
 
-    if not os.path.exists(paths.INTERPOLATION_PATH+'neigh_start/'):
-        os.makedirs(paths.INTERPOLATION_PATH+'neigh_start/')
+    if not os.path.exists(OUTPUT_FILE_DIR+'neigh_start/'):
+        os.makedirs(OUTPUT_FILE_DIR+'neigh_start/')
 
-    if not os.path.exists(paths.INTERPOLATION_PATH+'neigh_end/'):
-        os.makedirs(paths.INTERPOLATION_PATH+'neigh_end/')
+    if not os.path.exists(OUTPUT_FILE_DIR+'neigh_end/'):
+        os.makedirs(OUTPUT_FILE_DIR+'neigh_end/')
     start_time = time.time()
 
-    z_vectors = np.genfromtxt(paths.Z_FILE_PATH, delimiter=',')
-    param_vectors = read_h5(paths.PARAMETER_PATH)
+    z_vectors = np.genfromtxt(z_vectors, delimiter=',')
+    param_vectors = read_h5(parameter_vectors)
 
     print("Vectors: Z - {}. Parameters - {}".format(z_vectors.shape, param_vectors.shape))
 
@@ -161,6 +180,10 @@ if __name__ == '__main__':
         param_indices = np.load(param_indices_file)
     param_indices = calculate_param_indices(param_vectors)
     print("Parameters indices- {}".format(param_indices.shape))
+
+    #------------------
+    # This section contains the specific model architecture from the 3D-GAE
+    # for computing the interpolations. Replace as you see fit.
 
     model = get_model()
 
@@ -180,6 +203,8 @@ if __name__ == '__main__':
     reconstructions = gae.predict([data_test, shape_indices])
     reconstructions[reconstructions >= 0.5] = 1
     reconstructions[reconstructions < 0.5] = 0
+    #------------------
+
     print("z_vectors shape: {}. Reconstructions shape: {}".format(z_vectors.shape, reconstructions.shape))
 
     distance_scalars = []
@@ -210,19 +235,14 @@ if __name__ == '__main__':
         distance_to_recons.append(distance_to_recon_start)
         distance_to_recons.append(distance_to_recon_end)
 
-        # chair 1= 354
-        # table 1= 109-75
-        if(i == 75):
+        if(i == OUTPUT_INTERPOLATION_INDEX):
             p1 = param_vectors[param_indices[i][0]]
             p2 = param_vectors[param_indices[i][1]]
             p3 = param_vectors[param_indices[i][2]]
-            print(p1, p2, p3)
-            save_volume.save_output(recon_interpolate, 32, paths.INTERPOLATION_PATH+'interp/', i)
-            save_volume.save_output(recon_mid, 32, paths.INTERPOLATION_PATH+'real/', i)
-            save_volume.save_output(recon_start, 32, paths.INTERPOLATION_PATH+'neigh_start/', i)
-            save_volume.save_output(recon_end, 32, paths.INTERPOLATION_PATH+'neigh_end/', i)
-            #break
-
+            save_volume.save_output(recon_interpolate, 32, OUTPUT_FILE_DIR+'interp/', i)
+            save_volume.save_output(recon_mid, 32, OUTPUT_FILE_DIR+'real/', i)
+            save_volume.save_output(recon_start, 32, OUTPUT_FILE_DIR+'neigh_start/', i)
+            save_volume.save_output(recon_end, 32, OUTPUT_FILE_DIR+'neigh_end/', i)
 
     distance_scalars = np.array(distance_scalars)
     distance_neighbours = np.array(distance_neighbours)
@@ -236,23 +256,6 @@ if __name__ == '__main__':
 
     print("Distances - Scalar: {}. Neighbour: {}".format(avg_distance_scalar, avg_distance_neighbour))
     print("Distances to - interp: {}. recon: {}".format(avg_distance_to_interp, avg_distance_to_recon))
-    '''
-    a = np.array([[0.2, 2, 3, 4, 5],
-                  [0.7, 2, 3, 4, 5],
-                  [0.45, 2, 3, 4, 5],
-                  [10, 2, 3, 4, 5],
-                  [11,12,5,14,15],
-                  [11,12,4,14,15],
-                  [1, 4, 3, 2, 5],
-                  [11,12,3,14,15],
-                  [11,13,13,3,15],])
 
-    step_val = calculate_step(3, 5, 3)
-    arr = []
-    print("Output: ", np.array(get_same_indices(arr, a, 2, step_val)).astype(int), "step: ", round(step_val, 2))
-    #print(a[:,1])
-    ##print(np.unique(a[:,0]))
-    #print(np.split(a[:,1], np.unique(a[:, 0], return_index=True)[1][1:]))
-    '''
     end_time = time.time()
     print("Took {} seconds to complete.".format(end_time - start_time))
