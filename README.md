@@ -2,13 +2,13 @@
 
 As part of the URSA (Undergraduate Student Research Award), funded by the NSERC, we design a 3D-procedural modeling library that can generate various types of furniture shapes, such as Chairs, Beds, Tables and Shelves.
 
-For this paper (url ommitted), we develop a novel evaulation of the latent space of 3D voxelized data, generated from various network architecture models.
+For this paper found here (https://openaccess.thecvf.com/content/ICCV2021W/DLGC/html/Ali_Evaluation_of_Latent_Space_Learning_With_Procedurally-Generated_Datasets_of_Shapes_ICCVW_2021_paper.html), we develop a novel evaulation of the latent space of 3D voxelized data, generated from various network architecture models.
 
 
 
 ## Updates
 
-November 3, 2021: Updated the `Chair` datasets for both kaggle and here. Note: The new ones are named `Chair_updated`. If using the kaggle dataset, **make sure to rename the `chair_updated` to `chair` in order to be compatiable with the autoencoder models. **
+November 3, 2021: Updated the `Chair` datasets for both kaggle and here. Note: The new ones are named `Chair_updated`. If using the kaggle dataset, **make sure to rename the `chair_updated` to `chair` in order to be compatiable with the autoencoder models.**
 ## Datasets
 
 The entirety of the dataset (both checkpoints and inputs) are found on the kaggle page here: https://www.kaggle.com/sharjeelalics/3d-latent-space-evaluation
