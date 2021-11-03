@@ -4,7 +4,14 @@ As part of the URSA (Undergraduate Student Research Award), funded by the NSERC,
 
 For this paper (url ommitted), we develop a novel evaulation of the latent space of 3D voxelized data, generated from various network architecture models.
 
+
+
+## Updates
+
+November 3, 2021: Updated the `Chair` datasets for both kaggle and here. Note: The new ones are named `Chair_updated`. If using the kaggle dataset, **make sure to rename the `chair_updated` to `chair` in order to be compatiable with the autoencoder models. **
 ## Datasets
+
+The entirety of the dataset (both checkpoints and inputs) are found on the kaggle page here: https://www.kaggle.com/sharjeelalics/3d-latent-space-evaluation
 
 This repository contains all the datasets used for training. It is seperated into the following:
 
