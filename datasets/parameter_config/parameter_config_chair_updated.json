@@ -1,0 +1,90 @@
+{
+    "Chair": {
+        "config": [
+            {
+                "data": [
+                    20,
+                    40
+                ],
+                "name": "width",
+                "step": 3,
+                "type": "scalar"
+            },
+            {
+                "data": [
+                    20,
+                    40
+                ],
+                "name": "depth",
+                "step": 3,
+                "type": "scalar"
+            },
+            {
+                "data": [
+                    0.2,
+                    0.7
+                ],
+                "name": "legHeightPercent",
+                "step": 4,
+                "type": "scalar"
+            },
+            {
+                "data": [
+                    "legs_round",
+                    "legs_office",
+                    "legs_basic",
+                    "legs_support"
+                ],
+                "name": "legType",
+                "step": 3,
+                "type": "type"
+            },
+            {
+                "data": [
+                    "seat_basic",
+                    "seat_curved"
+                ],
+                "name": "seatType",
+                "step": 3,
+                "type": "type"
+            },
+            {
+                "data": [
+                    "rest_basic",
+                    "rest_office"
+                ],
+                "name": "restBottomType",
+                "step": 3,
+                "type": "type"
+            },
+            {
+                "data": [
+                    "arms_basic",
+                    "arms_curved",
+                    "arms_office",
+                    "arms_none"
+                ],
+                "name": "armType",
+                "step": 3,
+                "type": "type"
+            }
+        ],
+        "vector": [
+            "width",
+            "depth",
+            "legHeightPercent",
+            "legs_round",
+            "legs_office",
+            "legs_basic",
+            "legs_support",
+            "seat_basic",
+            "seat_curved",
+            "rest_basic",
+            "rest_office",
+            "arms_basic",
+            "arms_curved",
+            "arms_office",
+            "arms_none"
+        ]
+    }
+}
